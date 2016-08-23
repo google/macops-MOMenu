@@ -60,6 +60,8 @@ NSString *const kHideMenuIconKey = @"HideMenuIcon";
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+  BOOL noCheckSignatures = [[[NSProcessInfo processInfo] arguments]
+                                containsObject:@"--nochecksignatures"];
   NSArray *pluginDir = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:kPlugInDirectory
                                                                            error:NULL];
   [pluginDir enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
@@ -68,7 +70,8 @@ NSString *const kHideMenuIconKey = @"HideMenuIcon";
       NSBundle *pluginBundle = [NSBundle bundleWithPath:fullPath];
       Class principalClass = [pluginBundle principalClass];
       MOLCodesignChecker *cc = [[MOLCodesignChecker alloc] initWithBinaryPath:fullPath];
-      if ([cc signingInformationMatches:[[MOLCodesignChecker alloc] initWithSelf]]) {
+      if (noCheckSignatures ||
+          [cc signingInformationMatches:[[MOLCodesignChecker alloc] initWithSelf]]) {
         if ([principalClass conformsToProtocol:@protocol(GCMProtocol)]) {
           [pluginBundle load];
           NSObject<GCMProtocol> *plugin = [[principalClass alloc] init];
@@ -117,6 +120,9 @@ NSString *const kHideMenuIconKey = @"HideMenuIcon";
     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kHideMenuIconKey];
     self.statusIconIsHidden = NO;
   }
+
+  [self.statusItem.button performClick:sender];
+
   return YES;
 }
 
